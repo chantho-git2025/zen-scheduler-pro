@@ -6,8 +6,17 @@ interface StaffMember {
   name: string;
   shift: string;
   role: string;
+  callRecords: number;
+  careRecords: number;
   records: number;
   contribution: number;
+}
+
+interface ShiftCount {
+  shift3to8: number;
+  shift8to17: number;
+  shift17to22: number;
+  shift22to3: number;
 }
 
 // Mock data for development
@@ -16,42 +25,54 @@ const mockProductivityData: StaffMember[] = [
     name: "John Smith",
     shift: "Morning",
     role: "Senior Agent",
-    records: 127,
+    callRecords: 127,
+    careRecords: 45,
+    records: 172,
     contribution: 23.5
   },
   {
     name: "Sarah Johnson",
     shift: "Morning",
     role: "Agent",
-    records: 98,
+    callRecords: 98,
+    careRecords: 32,
+    records: 130,
     contribution: 18.1
   },
   {
     name: "Michael Brown",
     shift: "Afternoon",
     role: "Senior Agent",
-    records: 143,
+    callRecords: 143,
+    careRecords: 51,
+    records: 194,
     contribution: 26.4
   },
   {
     name: "Emily Davis",
     shift: "Evening",
     role: "Team Lead",
-    records: 87,
+    callRecords: 87,
+    careRecords: 39,
+    records: 126,
     contribution: 16.1
   },
   {
     name: "Robert Wilson",
     shift: "Afternoon",
     role: "Agent",
-    records: 62,
+    callRecords: 62,
+    careRecords: 25,
+    records: 87,
     contribution: 11.5
   },
   {
     name: "Jennifer Taylor",
     shift: "Evening",
     role: "Agent",
-    records: 24,
+    callRecords: 24,
+    careRecords: 10,
+    records: 34,
     contribution: 4.4
   }
 ];
@@ -101,15 +122,31 @@ export function sortData(data: StaffMember[], sortField: keyof StaffMember, asce
 }
 
 export function exportToCSV(data: StaffMember[]) {
-  const headers = ["Name", "Shift", "Role", "Records", "Contribution (%)"];
+  const headers = ["Work Shift", "Name", "Call Logs", "Care Logs", "3AM-8AM", "8AM-5PM", "5PM-10PM", "10PM-3AM", "Total Records"];
+  
+  // Mock shift counts for each staff member
+  const mockShiftCounts: Record<string, ShiftCount> = {};
+  data.forEach(staff => {
+    mockShiftCounts[staff.name] = {
+      shift3to8: Math.floor(Math.random() * 10),
+      shift8to17: Math.floor(Math.random() * 30) + 10,
+      shift17to22: Math.floor(Math.random() * 20) + 5,
+      shift22to3: Math.floor(Math.random() * 8)
+    };
+  });
+  
   const csvRows = [
     headers.join(","),
-    ...data.map(item => [
-      item.name,
-      item.shift,
-      item.role,
-      item.records,
-      item.contribution.toFixed(1)
+    ...data.map(staff => [
+      staff.shift,
+      staff.name,
+      staff.callRecords.toString(),
+      staff.careRecords.toString(),
+      (mockShiftCounts[staff.name]?.shift3to8 || 0).toString(),
+      (mockShiftCounts[staff.name]?.shift8to17 || 0).toString(),
+      (mockShiftCounts[staff.name]?.shift17to22 || 0).toString(),
+      (mockShiftCounts[staff.name]?.shift22to3 || 0).toString(),
+      staff.records.toString()
     ].join(","))
   ];
   
@@ -125,6 +162,7 @@ export function exportToCSV(data: StaffMember[]) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 export function getShiftDistribution(data: StaffMember[]) {

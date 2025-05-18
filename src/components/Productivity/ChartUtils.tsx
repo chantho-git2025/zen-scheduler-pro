@@ -34,6 +34,8 @@ ChartJS.register(
   PointElement,
   RadialLinearScale,
   ScatterController,
+  TimeScale,
+  TimeSeriesScale,
   Filler
 );
 
@@ -48,7 +50,7 @@ export const defaultBarChartOptions = {
   },
   scales: {
     x: {
-      type: 'category' as const,
+      type: 'linear' as const,
       display: true,
     },
     y: {
