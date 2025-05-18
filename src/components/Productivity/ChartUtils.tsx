@@ -9,26 +9,33 @@ import {
   Legend,
   ArcElement,
   PieController,
-  BarController
+  BarController,
+  LineElement,
+  PointElement,
+  RadialLinearScale,
+  ScatterController,
+  TimeScale,
+  TimeSeriesScale,
+  Filler
 } from "chart.js";
 
-export function registerCharts() {
-  // Register all necessary Chart.js components
-  ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend,
-    ArcElement,
-    PieController,
-    BarController
-  );
-}
-
-// Initialize charts on module import
-registerCharts();
+// Register all necessary Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PieController,
+  BarController,
+  LineElement,
+  PointElement,
+  RadialLinearScale,
+  ScatterController,
+  Filler
+);
 
 // Chart configuration helpers
 export const defaultBarChartOptions = {

@@ -27,7 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 
-// Important: Import ChartUtils module to ensure charts are registered
+// Make sure we import ChartUtils to ensure all Chart.js components are registered
 import "./ChartUtils";
 
 interface StaffMember {
