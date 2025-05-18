@@ -76,7 +76,7 @@ export function FilterBar({
               <SelectValue placeholder="All Shifts" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Shifts</SelectItem>
+              <SelectItem value="all">All Shifts</SelectItem>
               <SelectItem value="Morning">Morning</SelectItem>
               <SelectItem value="Afternoon">Afternoon</SelectItem>
               <SelectItem value="Evening">Evening</SelectItem>
