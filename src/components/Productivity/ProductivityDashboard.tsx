@@ -19,17 +19,7 @@ import {
   SlidersHorizontal
 } from "lucide-react";
 import { Bar, Pie } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip as ChartTooltip,
-  Legend,
-  ArcElement,
-  Tooltip,
-} from "chart.js";
+import { chartColors, defaultBarChartOptions, defaultPieChartOptions } from "./ChartUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,16 +27,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 
-// Register Chart.js components - making sure to register all required scales
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+// Import ChartUtils to ensure charts are registered
+import "./ChartUtils";
 
 interface StaffMember {
   name: string;
@@ -130,8 +112,8 @@ export default function ProductivityDashboard() {
       {
         label: "Records",
         data: staffContribution.map(item => item.records),
-        backgroundColor: "rgba(45, 212, 191, 0.7)",
-        borderColor: "rgb(45, 212, 191)",
+        backgroundColor: chartColors.primary,
+        borderColor: chartColors.primaryBorder,
         borderWidth: 1
       }
     ]
@@ -143,14 +125,14 @@ export default function ProductivityDashboard() {
       {
         data: shiftDistribution.map(item => item.records),
         backgroundColor: [
-          "rgba(45, 212, 191, 0.7)",
-          "rgba(79, 70, 229, 0.7)",
-          "rgba(249, 115, 22, 0.7)"
+          chartColors.primary,
+          chartColors.secondary,
+          chartColors.tertiary
         ],
         borderColor: [
-          "rgb(45, 212, 191)",
-          "rgb(79, 70, 229)",
-          "rgb(249, 115, 22)"
+          chartColors.primaryBorder,
+          chartColors.secondaryBorder,
+          chartColors.tertiaryBorder
         ],
         borderWidth: 1
       }
@@ -158,36 +140,20 @@ export default function ProductivityDashboard() {
   };
 
   const barChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
+    ...defaultBarChartOptions,
     plugins: {
-      legend: {
-        position: "top" as const
-      },
+      ...defaultBarChartOptions.plugins,
       title: {
         display: true,
         text: "Records by Staff Member"
-      }
-    },
-    scales: {
-      x: {
-        type: 'category' as const,
-        display: true,
-      },
-      y: {
-        type: 'linear' as const,
-        display: true,
       }
     }
   };
 
   const pieChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
+    ...defaultPieChartOptions,
     plugins: {
-      legend: {
-        position: "top" as const
-      },
+      ...defaultPieChartOptions.plugins,
       title: {
         display: true,
         text: "Records by Shift"
