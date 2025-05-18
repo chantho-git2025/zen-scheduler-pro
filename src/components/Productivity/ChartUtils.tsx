@@ -38,6 +38,16 @@ export const defaultBarChartOptions = {
     legend: {
       position: "top" as const
     }
+  },
+  scales: {
+    x: {
+      type: 'category' as const,
+      display: true,
+    },
+    y: {
+      type: 'linear' as const,
+      display: true,
+    }
   }
 };
 
