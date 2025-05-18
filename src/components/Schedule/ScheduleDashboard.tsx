@@ -83,8 +83,8 @@ export default function ScheduleDashboard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<"today" | "tomorrow">("today");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [assigneeFilter, setAssigneeFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
   
   const today = getTodayDate();
   const tomorrow = getTomorrowDate();
@@ -114,12 +114,12 @@ export default function ScheduleDashboard() {
     }
     
     // Apply status filter
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== "all") {
       filtered = filterTasksByStatus(filtered, statusFilter);
     }
     
     // Apply assignee filter
-    if (assigneeFilter) {
+    if (assigneeFilter && assigneeFilter !== "all") {
       filtered = filterTasksByAssignee(filtered, assigneeFilter);
     }
     
@@ -134,8 +134,8 @@ export default function ScheduleDashboard() {
 
   const resetFilters = () => {
     setSearchQuery("");
-    setStatusFilter("");
-    setAssigneeFilter("");
+    setStatusFilter("all");
+    setAssigneeFilter("all");
   };
 
   return (
@@ -293,7 +293,7 @@ export default function ScheduleDashboard() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   {uniqueStatuses.map(status => (
                     <SelectItem key={status} value={status} className="capitalize">
                       {status}
@@ -310,7 +310,7 @@ export default function ScheduleDashboard() {
                   <SelectValue placeholder="All assignees" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All assignees</SelectItem>
+                  <SelectItem value="all">All assignees</SelectItem>
                   {uniqueAssignees.map(assignee => (
                     <SelectItem key={assignee} value={assignee}>
                       {assignee}
