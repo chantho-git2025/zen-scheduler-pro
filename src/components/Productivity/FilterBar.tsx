@@ -1,12 +1,10 @@
 
-import { useState } from "react";
-import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Download } from "lucide-react";
+import { Calendar, Download } from "lucide-react";
 import { format } from "date-fns";
-import { defaultExcludedSolutions } from "./types";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface FilterBarProps {
   startDate: Date | null;
@@ -45,7 +43,7 @@ export function FilterBar({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
+              <CalendarComponent
                 mode="single"
                 selected={startDate || undefined}
                 onSelect={setStartDate}
@@ -62,7 +60,7 @@ export function FilterBar({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
+              <CalendarComponent
                 mode="single"
                 selected={endDate || undefined}
                 onSelect={setEndDate}
@@ -77,9 +75,12 @@ export function FilterBar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Shifts</SelectItem>
-              <SelectItem value="Morning">Morning</SelectItem>
-              <SelectItem value="Afternoon">Afternoon</SelectItem>
-              <SelectItem value="Evening">Evening</SelectItem>
+              <SelectItem value="Day Shift">Day Shift</SelectItem>
+              <SelectItem value="Nightshift">Nightshift</SelectItem>
+              <SelectItem value="Hybrid">Hybrid</SelectItem>
+              <SelectItem value="Management">Management</SelectItem>
+              <SelectItem value="Relief Team">Relief Team</SelectItem>
+              <SelectItem value="Survey Team">Survey Team</SelectItem>
             </SelectContent>
           </Select>
           

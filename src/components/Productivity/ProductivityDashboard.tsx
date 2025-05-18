@@ -5,8 +5,8 @@ import { FilterBar } from "./FilterBar";
 import { ProductivityTable } from "./ProductivityTable";
 import { NoDataPlaceholder } from "./NoDataPlaceholder";
 import { ProcessingIndicator } from "./ProcessingIndicator";
-import { processFiles, generateShiftCounts } from "./DataProcessingService";
-import { StaffMember, ShiftCount, defaultExcludedSolutions } from "./types";
+import { processFiles } from "./DataProcessingService";
+import { StaffMember } from "./types";
 import "./ChartUtils";
 
 export default function ProductivityDashboard() {
@@ -21,15 +21,11 @@ export default function ProductivityDashboard() {
   // Filters
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [shiftFilter, setShiftFilter] = useState<string>("");
-  const [excludedSolutions, setExcludedSolutions] = useState<string[]>(defaultExcludedSolutions);
+  const [shiftFilter, setShiftFilter] = useState<string>("all");
   
   // Sorting
-  const [sortField, setSortField] = useState<keyof StaffMember>("name");
+  const [sortField, setSortField] = useState<keyof StaffMember>("shift");
   const [sortAscending, setSortAscending] = useState<boolean>(true);
-
-  // Shift counts for each staff member
-  const [shiftCounts, setShiftCounts] = useState<Record<string, ShiftCount>>({});
 
   useEffect(() => {
     if (callLogsFile && careLogsFile) {
@@ -42,10 +38,6 @@ export default function ProductivityDashboard() {
     try {
       const data = await processFiles(callLogsFile, careLogsFile);
       setProductivityData(data);
-      
-      // Generate mock shift counts
-      const mockShiftCounts = generateShiftCounts(data);
-      setShiftCounts(mockShiftCounts);
     } catch (error) {
       console.error("Error processing files:", error);
     } finally {
@@ -74,7 +66,7 @@ export default function ProductivityDashboard() {
     }
     
     // Apply shift filter if present
-    if (shiftFilter) {
+    if (shiftFilter && shiftFilter !== "all") {
       data = data.filter(item => item.shift === shiftFilter);
     }
     
@@ -100,8 +92,7 @@ export default function ProductivityDashboard() {
   const resetFilters = () => {
     setStartDate(null);
     setEndDate(null);
-    setShiftFilter("");
-    setExcludedSolutions(defaultExcludedSolutions);
+    setShiftFilter("all");
   };
 
   const handleExport = () => {
@@ -112,10 +103,10 @@ export default function ProductivityDashboard() {
         staff.name,
         staff.callRecords.toString(),
         staff.careRecords.toString(),
-        (shiftCounts[staff.name]?.shift3to8 || 0).toString(),
-        (shiftCounts[staff.name]?.shift8to17 || 0).toString(),
-        (shiftCounts[staff.name]?.shift17to22 || 0).toString(),
-        (shiftCounts[staff.name]?.shift22to3 || 0).toString(),
+        staff.shift3to8.toString(),
+        staff.shift8to17.toString(),
+        staff.shift17to22.toString(),
+        staff.shift22to3.toString(),
         staff.records.toString()
       ])
     ];
@@ -182,7 +173,6 @@ export default function ProductivityDashboard() {
                 filteredData={filteredData}
                 sortField={sortField}
                 sortAscending={sortAscending}
-                shiftCounts={shiftCounts}
                 handleSort={handleSort}
               />
             </div>

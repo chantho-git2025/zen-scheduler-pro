@@ -7,6 +7,11 @@ export interface StaffMember {
   careRecords: number;
   records: number;
   contribution: number;
+  // Time-based record counts
+  shift3to8: number;
+  shift8to17: number;
+  shift17to22: number;
+  shift22to3: number;
 }
 
 export interface ShiftCount {
