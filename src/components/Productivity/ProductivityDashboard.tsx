@@ -25,9 +25,10 @@ import {
   LinearScale,
   BarElement,
   Title,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend,
   ArcElement,
+  Tooltip,
 } from "chart.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 
+// Register Chart.js components - making sure to register all required scales
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -165,6 +167,16 @@ export default function ProductivityDashboard() {
       title: {
         display: true,
         text: "Records by Staff Member"
+      }
+    },
+    scales: {
+      x: {
+        type: 'category' as const,
+        display: true,
+      },
+      y: {
+        type: 'linear' as const,
+        display: true,
       }
     }
   };
