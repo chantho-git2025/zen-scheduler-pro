@@ -2,25 +2,23 @@
 import { useState } from "react";
 import AppLayout from "@/components/Layout/AppLayout";
 import { ThemeProvider } from "@/context/ThemeContext";
-import ScheduleDashboard from "@/components/Schedule/ScheduleDashboard";
+import ProductivityDashboard from "@/components/Productivity/ProductivityDashboard";
 
-const Index = () => {
+export default function ProductivityPage() {
   return (
     <ThemeProvider>
       <AppLayout>
         <div className="space-y-6">
           <div className="flex flex-col space-y-2">
-            <h1 className="text-2xl font-bold">Schedule Dashboard</h1>
+            <h1 className="text-2xl font-bold">Productivity Dashboard</h1>
             <p className="text-muted-foreground">
-              View and manage team schedules
+              Monitor team productivity metrics and analyze performance data
             </p>
           </div>
           
-          <ScheduleDashboard />
+          <ProductivityDashboard />
         </div>
       </AppLayout>
     </ThemeProvider>
   );
-};
-
-export default Index;
+}

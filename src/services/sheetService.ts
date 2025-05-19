@@ -1,4 +1,3 @@
-
 // This is a simplified implementation of Google Sheets API service
 // In a real application, you'd want to handle authentication properly on a server
 import * as XLSX from "xlsx";
@@ -22,6 +21,8 @@ export interface WorkScheduleItem {
 
 // Define paths for file uploads
 const SCHEDULE_PATH = "product/src/upload/DATA_Schedule/schedule.xlsx";
+const CALL_LOGS_PATH = "product/src/upload/DATA_Call/calllogs.xlsx";
+const CARE_LOGS_PATH = "product/src/upload/DATA_Care/carelogs.xlsx";
 
 // Mock data for development
 const mockScheduleData: ScheduleItem[] = [
@@ -319,15 +320,15 @@ const mockWorkScheduleData: WorkScheduleItem[] = [
   }
 ];
 
-export async function readExcelFile(filePath: string): Promise<any[]> {
+export async function readExcelFile(fileData: ArrayBuffer): Promise<any[]> {
   try {
-    // In a real app with a server, you'd read the Excel file here
-    // For now, just return mock data
-    console.log(`Reading Excel file from ${filePath}...`);
-    return Promise.resolve([]);
+    const workbook = XLSX.read(fileData, { type: 'array' });
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    return XLSX.utils.sheet_to_json(worksheet);
   } catch (error) {
     console.error("Error reading Excel file:", error);
-    return Promise.reject(error);
+    throw new Error("Failed to read Excel file");
   }
 }
 

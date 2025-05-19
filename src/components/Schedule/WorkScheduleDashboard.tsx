@@ -8,11 +8,12 @@ import {
   getUniqueShifts,
   getUniquePositions,
   getUniqueNames,
-  WorkScheduleItem
+  WorkScheduleItem,
+  readExcelFile
 } from "@/services/sheetService";
 
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
-import { Calendar as CalendarIcon, User, Clock, Filter, BriefcaseIcon } from "lucide-react";
+import { Calendar as CalendarIcon, User, Clock, Filter, BriefcaseIcon, Upload, FileUp } from "lucide-react";
 import { 
   Table, 
   TableHeader, 
@@ -71,6 +72,7 @@ export default function WorkScheduleDashboard() {
   const [nameFilter, setNameFilter] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [viewMonth, setViewMonth] = useState<Date>(new Date());
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
   useEffect(() => {
     const loadData = async () => {
@@ -88,6 +90,49 @@ export default function WorkScheduleDashboard() {
     
     loadData();
   }, []);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    setUploadedFile(file);
+    
+    try {
+      setLoading(true);
+      toast.info("Processing schedule file...");
+      
+      // Read the file
+      const fileData = await file.arrayBuffer();
+      const result = await readExcelFile(fileData);
+      
+      // Check if data is valid
+      if (Array.isArray(result) && result.length > 0) {
+        // Map file data to WorkScheduleItem format
+        const formattedData = result.map((row, index) => ({
+          id: `${index + 1}`,
+          name: row.Name || "",
+          date: row.Date || "",
+          shift: row.Shifts || "",
+          position: row.Position || ""
+        })).filter(item => item.name && item.date);
+        
+        if (formattedData.length > 0) {
+          setScheduleData(formattedData);
+          toast.success(`Loaded ${formattedData.length} schedule records`);
+        } else {
+          toast.error("No valid data found in file");
+        }
+      } else {
+        toast.error("Invalid file format");
+      }
+    } catch (error) {
+      console.error("Error processing file:", error);
+      toast.error("Failed to process file");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredData = useMemo(() => {
     let filtered = scheduleData;
@@ -193,6 +238,41 @@ export default function WorkScheduleDashboard() {
         <p className="text-muted-foreground">
           View and manage your team's work schedule
         </p>
+      </div>
+      
+      <div className="bg-muted/30 p-4 rounded-md">
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="w-full">
+            <label htmlFor="scheduleFile" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-background/50 hover:bg-background/80 transition-colors">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <FileUp className="w-8 h-8 mb-2 text-primary" />
+                <p className="mb-2 text-sm text-center">
+                  <span className="font-semibold">Click to upload</span> or drag and drop
+                </p>
+                <p className="text-xs text-muted-foreground">XLSX, XLS, CSV (MAX. 10MB)</p>
+              </div>
+              <input 
+                id="scheduleFile" 
+                type="file" 
+                className="hidden" 
+                accept=".xlsx,.xls,.csv" 
+                onChange={handleFileUpload} 
+              />
+            </label>
+          </div>
+          
+          {uploadedFile && (
+            <div className="w-full sm:w-auto bg-background p-3 rounded-md border flex items-center gap-2">
+              <FileUp className="h-5 w-5 text-primary" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{uploadedFile.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {(uploadedFile.size / 1024).toFixed(2)} KB
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-[1fr_250px] gap-6">

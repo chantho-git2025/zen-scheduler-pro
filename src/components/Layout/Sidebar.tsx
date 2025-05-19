@@ -1,12 +1,13 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Calendar, BarChart3, Settings, Menu, X, User } from "lucide-react";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
@@ -16,25 +17,35 @@ export default function Sidebar() {
     {
       name: "Schedule",
       icon: <Calendar className="h-5 w-5" />,
-      path: "#schedule",
-      active: true,
+      path: "/",
+      active: location.pathname === "/" || location.pathname.startsWith("/schedule"),
     },
     {
       name: "Productivity",
       icon: <BarChart3 className="h-5 w-5" />,
-      path: "#productivity",
+      path: "/productivity",
+      active: location.pathname.startsWith("/productivity"),
     },
     {
       name: "Profile",
       icon: <User className="h-5 w-5" />,
-      path: "#profile",
+      path: "/profile",
+      active: location.pathname === "/profile",
     },
     {
-      name: "Settings",
+      name: "Admin",
       icon: <Settings className="h-5 w-5" />,
-      path: "#settings",
+      path: "/admin",
+      active: location.pathname === "/admin",
     },
   ];
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (window.innerWidth < 768) {
+      setIsOpen(false);
+    }
+  };
 
   return (
     <>
@@ -75,11 +86,11 @@ export default function Sidebar() {
         <div className="flex flex-col justify-between flex-1 py-6 overflow-y-auto">
           <nav className="px-4 space-y-1">
             {navItems.map((item) => (
-              <Link
+              <button
                 key={item.name}
-                to={item.path}
+                onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                  "flex w-full items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
                   item.active
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -87,7 +98,7 @@ export default function Sidebar() {
               >
                 {item.icon}
                 <span className="ml-3">{item.name}</span>
-              </Link>
+              </button>
             ))}
           </nav>
 
