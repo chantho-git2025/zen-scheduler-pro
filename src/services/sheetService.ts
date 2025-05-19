@@ -1,6 +1,7 @@
 
 // This is a simplified implementation of Google Sheets API service
 // In a real application, you'd want to handle authentication properly on a server
+import * as XLSX from "xlsx";
 
 export interface ScheduleItem {
   id: string;
@@ -18,6 +19,9 @@ export interface WorkScheduleItem {
   shift: string;
   position: string;
 }
+
+// Define paths for file uploads
+const SCHEDULE_PATH = "product/src/upload/DATA_Schedule/schedule.xlsx";
 
 // Mock data for development
 const mockScheduleData: ScheduleItem[] = [
@@ -200,12 +204,136 @@ const mockWorkScheduleData: WorkScheduleItem[] = [
     date: "2025-04-13",
     shift: "8AM-5PM",
     position: "Teamleader"
+  },
+  {
+    id: "17",
+    name: "PHANG RATHA",
+    date: "2025-05-07",
+    shift: "5PM-10PM",
+    position: "CC"
+  },
+  {
+    id: "18", 
+    name: "ANG PHEARAK",
+    date: "2025-05-20",
+    shift: "Day Off",
+    position: "CC"
+  },
+  {
+    id: "19",
+    name: "PHANG RATHA",
+    date: "2025-04-29",
+    shift: "5PM-10PM",
+    position: "CC"
+  },
+  {
+    id: "20",
+    name: "MAO SREYNICH",
+    date: "2025-04-24",
+    shift: "10AM-7PM",
+    position: "CS"
+  },
+  {
+    id: "21",
+    name: "PHANG RATHA",
+    date: "2025-05-10",
+    shift: "5PM-10PM",
+    position: "CC"
+  },
+  {
+    id: "22",
+    name: "PHANG RATHA",
+    date: "2025-04-07",
+    shift: "5PM-10PM",
+    position: "CC"
+  },
+  {
+    id: "23",
+    name: "CHEA PISEY",
+    date: "2025-04-23",
+    shift: "7AM-4PM",
+    position: "CC"
+  },
+  {
+    id: "24",
+    name: "CHEA USA",
+    date: "2025-04-14",
+    shift: "8AM-5PM",
+    position: "CS"
+  },
+  {
+    id: "25",
+    name: "SOEM VEASNA",
+    date: "2025-04-07",
+    shift: "8AM-5PM",
+    position: "CS"
+  },
+  {
+    id: "26",
+    name: "SOEM VEASNA",
+    date: "2025-04-24",
+    shift: "8AM-5PM",
+    position: "CS"
+  },
+  {
+    id: "27",
+    name: "PHANG RATHA",
+    date: "2025-04-29",
+    shift: "3AM-8AM",
+    position: "CC"
+  },
+  {
+    id: "28",
+    name: "CHUM VUTHY",
+    date: "2025-04-02",
+    shift: "3AM-8AM",
+    position: "CC"
+  },
+  {
+    id: "29",
+    name: "CHUM VUTHY",
+    date: "2025-04-15",
+    shift: "Public Holiday",
+    position: "CC"
+  },
+  {
+    id: "30",
+    name: "CHEA PISEY",
+    date: "2025-05-13",
+    shift: "Day Off",
+    position: "CC"
+  },
+  {
+    id: "31",
+    name: "CHUM VUTHY",
+    date: "2025-04-07",
+    shift: "3AM-8AM",
+    position: "CC"
+  },
+  {
+    id: "32",
+    name: "CHEA USA",
+    date: "2025-04-23",
+    shift: "7AM-4PM",
+    position: "CS"
   }
 ];
 
+export async function readExcelFile(filePath: string): Promise<any[]> {
+  try {
+    // In a real app with a server, you'd read the Excel file here
+    // For now, just return mock data
+    console.log(`Reading Excel file from ${filePath}...`);
+    return Promise.resolve([]);
+  } catch (error) {
+    console.error("Error reading Excel file:", error);
+    return Promise.reject(error);
+  }
+}
+
 export async function fetchScheduleData(): Promise<ScheduleItem[]> {
   // In a real implementation, this would make an API call to Google Sheets
-  // For now, we'll return mock data
+  // or read from Excel files in the upload folder
   return new Promise((resolve) => {
     // Simulate network delay
     setTimeout(() => {
@@ -215,8 +343,8 @@ export async function fetchScheduleData(): Promise<ScheduleItem[]> {
 }
 
 export async function fetchWorkScheduleData(): Promise<WorkScheduleItem[]> {
-  // In a real implementation, this would fetch from Google Sheets API
-  // For now, return mock data
+  // In a real implementation, this would read from Excel files in the upload folder
+  console.log("Fetching work schedule data...");
   return new Promise((resolve) => {
     // Simulate network delay
     setTimeout(() => {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { 
   fetchWorkScheduleData, 
@@ -176,8 +175,8 @@ export default function WorkScheduleDashboard() {
   };
 
   // Function to render calendar day content
-  const renderCalendarDay = (day: Date) => {
-    const daySchedule = getScheduleForDay(day);
+  const renderCalendarDay = (date: Date) => {
+    const daySchedule = getScheduleForDay(date);
     if (daySchedule.length === 0) return null;
     
     return (
@@ -323,7 +322,7 @@ export default function WorkScheduleDashboard() {
                 components={{
                   DayContent: (props) => (
                     <div className="relative w-full h-full flex items-center justify-center">
-                      <div>{props.day.day}</div>
+                      <div>{props.date.getDate()}</div>
                       {renderCalendarDay(props.date)}
                     </div>
                   ),

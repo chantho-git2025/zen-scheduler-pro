@@ -5,11 +5,11 @@ import TaskScheduleDashboard from "./TaskScheduleDashboard";
 import WorkScheduleDashboard from "./WorkScheduleDashboard";
 
 export default function ScheduleDashboard() {
-  const [activeTab, setActiveTab] = useState<"tasks" | "workSchedule">("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "workSchedule">("workSchedule");
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="tasks" onValueChange={(value) => setActiveTab(value as "tasks" | "workSchedule")}>
+      <Tabs defaultValue="workSchedule" onValueChange={(value) => setActiveTab(value as "tasks" | "workSchedule")}>
         <TabsList className="mb-6">
           <TabsTrigger value="tasks">Meeting Schedule</TabsTrigger>
           <TabsTrigger value="workSchedule">Work Schedule</TabsTrigger>
