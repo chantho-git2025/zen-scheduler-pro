@@ -386,7 +386,9 @@ export default function UserManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={user.status === "active" ? "success" : "secondary"}>{user.status}</TableCell>
+                    <Badge variant={user.status === "active" ? "success" : "secondary"}>
+                      {user.status}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
