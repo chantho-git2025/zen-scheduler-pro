@@ -4,8 +4,11 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
 import { cn } from "@/lib/utils"
 
-// Convert to a proper React functional component
-const TooltipProvider = ({ children, ...props }: { children: React.ReactNode }) => (
+// Convert to a proper React functional component and support all props from TooltipPrimitive.Provider
+const TooltipProvider = ({ 
+  children, 
+  ...props 
+}: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Provider>) => (
   <TooltipPrimitive.Provider {...props}>
     {children}
   </TooltipPrimitive.Provider>
