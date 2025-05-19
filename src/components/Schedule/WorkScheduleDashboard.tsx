@@ -9,10 +9,12 @@ import {
   getUniquePositions,
   getUniqueNames,
   WorkScheduleItem,
-  readExcelFile
+  readExcelFile,
+  formatDateToISO,
+  formatDateToDisplay
 } from "@/services/sheetService";
 
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parse } from "date-fns";
 import { Calendar as CalendarIcon, User, Clock, Filter, BriefcaseIcon, Upload, FileUp } from "lucide-react";
 import { 
   Table, 
@@ -56,8 +58,14 @@ const getShiftColor = (shift: string) => {
   }
 };
 
-// Helper function to format date
-const formatDate = (dateStr: string) => {
+// Helper function to format date for display
+const formatDateForDisplay = (dateStr: string) => {
+  // If already in MM-DD-YYYY format, convert to readable format
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+    const date = parse(dateStr, "MM-dd-yyyy", new Date());
+    return format(date, 'MMM dd, yyyy');
+  }
+  // Otherwise treat as ISO format
   const date = new Date(dateStr);
   return format(date, 'MMM dd, yyyy');
 };
@@ -112,7 +120,7 @@ export default function WorkScheduleDashboard() {
         const formattedData = result.map((row, index) => ({
           id: `${index + 1}`,
           name: row.Name || "",
-          date: row.Date || "",
+          date: row.Date || "", // Expecting MM-DD-YYYY format
           shift: row.Shifts || "",
           position: row.Position || ""
         })).filter(item => item.name && item.date);
@@ -157,14 +165,18 @@ export default function WorkScheduleDashboard() {
       filtered = filtered.filter(item => item.name === nameFilter);
     }
     
-    // Sort by date
-    return filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Sort by date - convert MM-DD-YYYY to Date objects for comparison
+    return filtered.sort((a, b) => {
+      const dateA = parse(a.date, "MM-dd-yyyy", new Date());
+      const dateB = parse(b.date, "MM-dd-yyyy", new Date());
+      return dateA.getTime() - dateB.getTime();
+    });
   }, [scheduleData, searchQuery, shiftFilter, positionFilter, nameFilter]);
   
   const todaySchedule = useMemo(() => {
     if (!selectedDate) return [];
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    return getWorkScheduleForDate(filteredData, dateStr);
+    const formattedDate = format(selectedDate, 'MM-dd-yyyy');
+    return getWorkScheduleForDate(filteredData, formattedDate);
   }, [filteredData, selectedDate]);
   
   const monthDays = useMemo(() => {
@@ -215,7 +227,7 @@ export default function WorkScheduleDashboard() {
 
   // Function to get schedule items for a specific day
   const getScheduleForDay = (day: Date) => {
-    const dateStr = format(day, 'yyyy-MM-dd');
+    const dateStr = format(day, 'MM-dd-yyyy');
     return scheduleData.filter(item => item.date === dateStr);
   };
 
@@ -338,7 +350,7 @@ export default function WorkScheduleDashboard() {
                       {filteredData.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell>{formatDate(item.date)}</TableCell>
+                          <TableCell>{formatDateForDisplay(item.date)}</TableCell>
                           <TableCell>
                             <Badge className={`${getShiftColor(item.shift)}`}>
                               {item.shift}
@@ -427,7 +439,7 @@ export default function WorkScheduleDashboard() {
                           </div>
                           <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                             <span>{item.position}</span>
-                            <span>{formatDate(item.date)}</span>
+                            <span>{formatDateForDisplay(item.date)}</span>
                           </div>
                         </div>
                       ))}
