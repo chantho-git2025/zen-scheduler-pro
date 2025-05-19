@@ -14,7 +14,7 @@ import {
   formatDateToDisplay
 } from "@/services/sheetService";
 
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parse } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parse, isValid } from "date-fns";
 import { Calendar as CalendarIcon, User, Clock, Filter, BriefcaseIcon, Upload, FileUp } from "lucide-react";
 import { 
   Table, 
@@ -60,14 +60,28 @@ const getShiftColor = (shift: string) => {
 
 // Helper function to format date for display
 const formatDateForDisplay = (dateStr: string) => {
-  // If already in MM-DD-YYYY format, convert to readable format
-  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
-    const date = parse(dateStr, "MM-dd-yyyy", new Date());
+  try {
+    if (!dateStr) return "";
+    // If already in MM-DD-YYYY format, convert to readable format
+    if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+      const date = parse(dateStr, "MM-dd-yyyy", new Date());
+      if (!isValid(date)) {
+        console.error("Invalid date parsed:", dateStr);
+        return dateStr;
+      }
+      return format(date, 'MMM dd, yyyy');
+    }
+    // Otherwise treat as ISO format
+    const date = new Date(dateStr);
+    if (!isValid(date)) {
+      console.error("Invalid date:", dateStr);
+      return dateStr;
+    }
     return format(date, 'MMM dd, yyyy');
+  } catch (error) {
+    console.error("Error formatting date for display:", dateStr, error);
+    return dateStr;
   }
-  // Otherwise treat as ISO format
-  const date = new Date(dateStr);
-  return format(date, 'MMM dd, yyyy');
 };
 
 export default function WorkScheduleDashboard() {
@@ -117,15 +131,23 @@ export default function WorkScheduleDashboard() {
       // Check if data is valid
       if (Array.isArray(result) && result.length > 0) {
         // Map file data to WorkScheduleItem format
-        const formattedData = result.map((row, index) => ({
-          id: `${index + 1}`,
-          name: row.Name || "",
-          date: row.Date || "", // Expecting MM-DD-YYYY format
-          shift: row.Shifts || "",
-          position: row.Position || ""
-        })).filter(item => item.name && item.date);
+        const formattedData = result.map((row: any, index: number) => {
+          // Debug the data we're receiving
+          console.log("Row data:", row);
+          
+          return {
+            id: `${index + 1}`,
+            name: row.Name || "",
+            // Use the exact column name from Excel: "Date", fallback to alternate names
+            date: row.Date || row['date'] || row.DATE || "",
+            // Use the exact column name from Excel: "Shifts", fallback to alternatives
+            shift: row.Shifts || row.SHIFT || row.Shift || row.shift || "",
+            position: row.Position || row.POSITION || row.position || ""
+          };
+        }).filter((item: any) => item.name && item.date);
         
         if (formattedData.length > 0) {
+          console.log("Formatted data:", formattedData.slice(0, 3));
           setScheduleData(formattedData);
           toast.success(`Loaded ${formattedData.length} schedule records`);
         } else {
@@ -175,6 +197,12 @@ export default function WorkScheduleDashboard() {
         // Parse the date strings to Date objects
         const dateA = parse(dateStringA, "MM-dd-yyyy", new Date());
         const dateB = parse(dateStringB, "MM-dd-yyyy", new Date());
+        
+        // Check if parse was successful
+        if (!isValid(dateA) || !isValid(dateB)) {
+          console.error("Invalid date during sort:", a.date, b.date);
+          return 0;
+        }
         
         // Compare timestamps
         return dateA.getTime() - dateB.getTime();

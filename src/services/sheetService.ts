@@ -1,7 +1,8 @@
+
 // This is a simplified implementation of Google Sheets API service
 // In a real application, you'd want to handle authentication properly on a server
 import * as XLSX from "xlsx";
-import { format, parse } from "date-fns";
+import { format, parse, isValid } from "date-fns";
 
 export interface ScheduleItem {
   id: string;
@@ -35,6 +36,10 @@ export function formatDateToISO(dateStr: string): string {
     }
     // Parse MM-DD-YYYY to a Date object and format to YYYY-MM-DD
     const parsedDate = parse(dateStr, "MM-dd-yyyy", new Date());
+    if (!isValid(parsedDate)) {
+      console.error("Invalid date during ISO conversion:", dateStr);
+      return dateStr;
+    }
     return format(parsedDate, "yyyy-MM-dd");
   } catch (error) {
     console.error("Error formatting date:", dateStr, error);
@@ -52,6 +57,10 @@ export function formatDateToDisplay(dateStr: string): string {
     }
     // Parse YYYY-MM-DD to a Date object and format to MM-DD-YYYY
     const parsedDate = parse(dateStr, "yyyy-MM-dd", new Date());
+    if (!isValid(parsedDate)) {
+      console.error("Invalid date during display conversion:", dateStr);
+      return dateStr;
+    }
     return format(parsedDate, "MM-dd-yyyy");
   } catch (error) {
     console.error("Error formatting date for display:", dateStr, error);
@@ -360,7 +369,74 @@ export async function readExcelFile(fileData: ArrayBuffer): Promise<any[]> {
     const workbook = XLSX.read(fileData, { type: 'array' });
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
-    return XLSX.utils.sheet_to_json(worksheet);
+    
+    // Use header option to make sure we get an array of objects with headers
+    const options = {
+      raw: false,
+      header: 1,  // Get array of arrays first to inspect headers
+      defval: "" // Default value for empty cells
+    };
+    
+    const rawData = XLSX.utils.sheet_to_json(worksheet, options);
+    
+    if (rawData.length === 0) {
+      throw new Error("Empty spreadsheet");
+    }
+    
+    // Get headers from first row
+    const headers = rawData[0];
+    console.log("Excel headers:", headers);
+    
+    // Map header indices
+    const headerIndices: Record<string, number> = {};
+    headers.forEach((header: any, index: number) => {
+      if (typeof header === 'string') {
+        headerIndices[header.toLowerCase()] = index;
+      }
+    });
+    
+    console.log("Header indices:", headerIndices);
+    
+    // Map data rows to objects based on header indices
+    const result = [];
+    
+    for (let i = 1; i < rawData.length; i++) {
+      const row = rawData[i];
+      if (row && row.length > 0) {
+        const item: Record<string, any> = {};
+        
+        // Map common column names to standardized fields
+        if (headerIndices.hasOwnProperty('name')) {
+          item.Name = row[headerIndices['name']];
+        }
+        if (headerIndices.hasOwnProperty('date')) {
+          item.Date = row[headerIndices['date']];
+        }
+        if (headerIndices.hasOwnProperty('shifts') || headerIndices.hasOwnProperty('shift')) {
+          const shiftIndex = headerIndices['shifts'] !== undefined ? 
+            headerIndices['shifts'] : headerIndices['shift'];
+          item.Shifts = row[shiftIndex];
+        }
+        if (headerIndices.hasOwnProperty('position')) {
+          item.Position = row[headerIndices['position']];
+        }
+        
+        // Also store with original header names for backup
+        headers.forEach((header: any, index: number) => {
+          if (typeof header === 'string' && row[index] !== undefined) {
+            item[header] = row[index];
+          }
+        });
+        
+        // Only add rows that have at least a name and date
+        if (item.Name && item.Date) {
+          result.push(item);
+        }
+      }
+    }
+    
+    console.log("Processed Excel data sample:", result.slice(0, 3));
+    return result;
   } catch (error) {
     console.error("Error reading Excel file:", error);
     throw new Error("Failed to read Excel file");
