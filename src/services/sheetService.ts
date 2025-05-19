@@ -377,23 +377,25 @@ export async function readExcelFile(fileData: ArrayBuffer): Promise<any[]> {
       defval: "" // Default value for empty cells
     };
     
-    const rawData = XLSX.utils.sheet_to_json(worksheet, options);
+    const rawData = XLSX.utils.sheet_to_json(worksheet, options) as Array<any>;
     
     if (rawData.length === 0) {
       throw new Error("Empty spreadsheet");
     }
     
     // Get headers from first row
-    const headers = rawData[0];
+    const headers = rawData[0] as Array<any>;
     console.log("Excel headers:", headers);
     
     // Map header indices
     const headerIndices: Record<string, number> = {};
-    headers.forEach((header: any, index: number) => {
-      if (typeof header === 'string') {
-        headerIndices[header.toLowerCase()] = index;
-      }
-    });
+    if (Array.isArray(headers)) {
+      headers.forEach((header: any, index: number) => {
+        if (typeof header === 'string') {
+          headerIndices[header.toLowerCase()] = index;
+        }
+      });
+    }
     
     console.log("Header indices:", headerIndices);
     
@@ -402,7 +404,7 @@ export async function readExcelFile(fileData: ArrayBuffer): Promise<any[]> {
     
     for (let i = 1; i < rawData.length; i++) {
       const row = rawData[i];
-      if (row && row.length > 0) {
+      if (row && Array.isArray(row) && row.length > 0) {
         const item: Record<string, any> = {};
         
         // Map common column names to standardized fields
@@ -422,11 +424,13 @@ export async function readExcelFile(fileData: ArrayBuffer): Promise<any[]> {
         }
         
         // Also store with original header names for backup
-        headers.forEach((header: any, index: number) => {
-          if (typeof header === 'string' && row[index] !== undefined) {
-            item[header] = row[index];
-          }
-        });
+        if (Array.isArray(headers)) {
+          headers.forEach((header: any, index: number) => {
+            if (typeof header === 'string' && row[index] !== undefined) {
+              item[header] = row[index];
+            }
+          });
+        }
         
         // Only add rows that have at least a name and date
         if (item.Name && item.Date) {
