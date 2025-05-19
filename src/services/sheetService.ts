@@ -1,4 +1,3 @@
-
 // This is a simplified implementation of Google Sheets API service
 // In a real application, you'd want to handle authentication properly on a server
 import * as XLSX from "xlsx";
@@ -433,7 +432,7 @@ export function searchWorkSchedule(data: WorkScheduleItem[], query: string): Wor
     item.name.toLowerCase().includes(lowercaseQuery) ||
     item.shift.toLowerCase().includes(lowercaseQuery) ||
     item.position.toLowerCase().includes(lowercaseQuery) ||
-    String(item.date).includes(lowercaseQuery)  // Convert date to string explicitly
+    String(item.date).includes(lowercaseQuery)  // Ensure date is a string
   );
 }
 

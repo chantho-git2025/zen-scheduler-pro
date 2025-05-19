@@ -167,9 +167,21 @@ export default function WorkScheduleDashboard() {
     
     // Sort by date - convert MM-DD-YYYY to Date objects for comparison
     return filtered.sort((a, b) => {
-      const dateA = parse(a.date, "MM-dd-yyyy", new Date());
-      const dateB = parse(b.date, "MM-dd-yyyy", new Date());
-      return dateA.getTime() - dateB.getTime();
+      try {
+        // Make sure we're working with strings
+        const dateStringA = String(a.date);
+        const dateStringB = String(b.date);
+        
+        // Parse the date strings to Date objects
+        const dateA = parse(dateStringA, "MM-dd-yyyy", new Date());
+        const dateB = parse(dateStringB, "MM-dd-yyyy", new Date());
+        
+        // Compare timestamps
+        return dateA.getTime() - dateB.getTime();
+      } catch (error) {
+        console.error("Error sorting dates:", error, a.date, b.date);
+        return 0; // Return 0 for equal sorting if there's an error
+      }
     });
   }, [scheduleData, searchQuery, shiftFilter, positionFilter, nameFilter]);
   
