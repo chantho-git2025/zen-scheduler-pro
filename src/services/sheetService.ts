@@ -1,4 +1,3 @@
-
 // This is a simplified implementation of Google Sheets API service
 // In a real application, you'd want to handle authentication properly on a server
 import * as XLSX from "xlsx";
@@ -26,16 +25,65 @@ const SCHEDULE_PATH = "product/src/upload/DATA_Schedule/schedule.xlsx";
 const CALL_LOGS_PATH = "product/src/upload/DATA_Call/calllogs.xlsx";
 const CARE_LOGS_PATH = "product/src/upload/DATA_Care/carelogs.xlsx";
 
+// Function to check if a string is a valid date in MM-DD-YYYY format
+function isValidDateString(dateStr: string): boolean {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+  
+  // Try to parse various formats
+  const formats = ["MM-dd-yyyy", "MM/dd/yyyy", "MM-dd-yy", "MM/dd/yy"];
+  
+  for (const formatStr of formats) {
+    const parsedDate = parse(dateStr, formatStr, new Date());
+    if (isValid(parsedDate)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// Function to normalize date strings to MM-DD-YYYY format
+export function normalizeDate(dateStr: string): string {
+  if (!dateStr || typeof dateStr !== 'string') return "";
+  
+  try {
+    // Check if date is already in YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const parsedDate = parse(dateStr, "yyyy-MM-dd", new Date());
+      if (isValid(parsedDate)) {
+        return format(parsedDate, "MM-dd-yyyy");
+      }
+    }
+    
+    // Try to parse various common formats
+    const formats = ["MM-dd-yyyy", "MM/dd/yyyy", "MM-dd-yy", "MM/dd/yy"];
+    
+    for (const formatStr of formats) {
+      const parsedDate = parse(dateStr, formatStr, new Date());
+      if (isValid(parsedDate)) {
+        // For 2-digit years, ensure we use 4-digit years in output
+        return format(parsedDate, "MM-dd-yyyy");
+      }
+    }
+    
+    console.error("Failed to normalize date:", dateStr);
+    return dateStr;
+  } catch (error) {
+    console.error("Error normalizing date:", dateStr, error);
+    return dateStr;
+  }
+}
+
 // Function to format date from MM-DD-YYYY to YYYY-MM-DD for internal use
 export function formatDateToISO(dateStr: string): string {
   try {
-    if (!dateStr) return "";
-    // Check if the date is already in YYYY-MM-DD format
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-      return dateStr;
-    }
-    // Parse MM-DD-YYYY to a Date object and format to YYYY-MM-DD
-    const parsedDate = parse(dateStr, "MM-dd-yyyy", new Date());
+    if (!dateStr || typeof dateStr !== 'string') return "";
+    
+    // First normalize to MM-DD-YYYY
+    const normalizedDate = normalizeDate(dateStr);
+    
+    // Then convert to YYYY-MM-DD
+    const parsedDate = parse(normalizedDate, "MM-dd-yyyy", new Date());
     if (!isValid(parsedDate)) {
       console.error("Invalid date during ISO conversion:", dateStr);
       return dateStr;
@@ -50,21 +98,37 @@ export function formatDateToISO(dateStr: string): string {
 // Function to format date from YYYY-MM-DD to MM-DD-YYYY for display
 export function formatDateToDisplay(dateStr: string): string {
   try {
-    if (!dateStr) return "";
-    // Check if the date is already in MM-DD-YYYY format
-    if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
-      return dateStr;
-    }
-    // Parse YYYY-MM-DD to a Date object and format to MM-DD-YYYY
-    const parsedDate = parse(dateStr, "yyyy-MM-dd", new Date());
-    if (!isValid(parsedDate)) {
-      console.error("Invalid date during display conversion:", dateStr);
-      return dateStr;
-    }
-    return format(parsedDate, "MM-dd-yyyy");
+    if (!dateStr || typeof dateStr !== 'string') return "";
+    
+    // First normalize input
+    const normalizedDate = normalizeDate(dateStr);
+    
+    // It should already be in MM-DD-YYYY format after normalization
+    return normalizedDate;
   } catch (error) {
     console.error("Error formatting date for display:", dateStr, error);
     return dateStr; // Return original if parsing fails
+  }
+}
+
+// Function to format date as a readable string (e.g., "May 19, 2025")
+export function formatDateToReadable(dateStr: string): string {
+  try {
+    if (!dateStr || typeof dateStr !== 'string') return "";
+    
+    // First normalize to MM-DD-YYYY
+    const normalizedDate = normalizeDate(dateStr);
+    
+    // Then format to readable date
+    const parsedDate = parse(normalizedDate, "MM-dd-yyyy", new Date());
+    if (!isValid(parsedDate)) {
+      console.error("Invalid date during readable conversion:", dateStr);
+      return dateStr;
+    }
+    return format(parsedDate, "MMM dd, yyyy");
+  } catch (error) {
+    console.error("Error formatting date for readable display:", dateStr, error);
+    return dateStr;
   }
 }
 
@@ -136,7 +200,7 @@ const mockScheduleData: ScheduleItem[] = [
   }
 ];
 
-// Mock work schedule data with MM-DD-YYYY format
+// Mock work schedule data standardized to MM-DD-YYYY format
 const mockWorkScheduleData: WorkScheduleItem[] = [
   {
     id: "1",
@@ -411,9 +475,14 @@ export async function readExcelFile(fileData: ArrayBuffer): Promise<any[]> {
         if (headerIndices.hasOwnProperty('name')) {
           item.Name = row[headerIndices['name']];
         }
+        
+        // Extract Date field and normalize it
         if (headerIndices.hasOwnProperty('date')) {
-          item.Date = row[headerIndices['date']];
+          const rawDate = row[headerIndices['date']];
+          // Normalize date format to MM-DD-YYYY
+          item.Date = normalizeDate(String(rawDate));
         }
+        
         if (headerIndices.hasOwnProperty('shifts') || headerIndices.hasOwnProperty('shift')) {
           const shiftIndex = headerIndices['shifts'] !== undefined ? 
             headerIndices['shifts'] : headerIndices['shift'];
@@ -427,7 +496,12 @@ export async function readExcelFile(fileData: ArrayBuffer): Promise<any[]> {
         if (Array.isArray(headers)) {
           headers.forEach((header: any, index: number) => {
             if (typeof header === 'string' && row[index] !== undefined) {
-              item[header] = row[index];
+              // For date fields, normalize the format
+              if (header.toLowerCase() === 'date') {
+                item[header] = normalizeDate(String(row[index]));
+              } else {
+                item[header] = row[index];
+              }
             }
           });
         }
@@ -471,22 +545,18 @@ export async function fetchWorkScheduleData(): Promise<WorkScheduleItem[]> {
 
 // Adjust the date matching for MM-DD-YYYY format
 export function getTasksForDate(data: ScheduleItem[], date: string): ScheduleItem[] {
-  // Convert input date to MM-DD-YYYY if it's in YYYY-MM-DD format
-  const formattedDate = /^\d{4}-\d{2}-\d{2}$/.test(date) 
-    ? formatDateToDisplay(date) 
-    : date;
-    
-  return data.filter(item => item.date === formattedDate);
+  // Normalize input date to MM-DD-YYYY
+  const formattedDate = normalizeDate(date);
+  
+  return data.filter(item => normalizeDate(item.date) === formattedDate);
 }
 
 // Adjust the date matching for MM-DD-YYYY format
 export function getWorkScheduleForDate(data: WorkScheduleItem[], date: string): WorkScheduleItem[] {
-  // Convert input date to MM-DD-YYYY if it's in YYYY-MM-DD format
-  const formattedDate = /^\d{4}-\d{2}-\d{2}$/.test(date) 
-    ? formatDateToDisplay(date) 
-    : date;
-    
-  return data.filter(item => item.date === formattedDate);
+  // Normalize input date to MM-DD-YYYY
+  const formattedDate = normalizeDate(date);
+  
+  return data.filter(item => normalizeDate(item.date) === formattedDate);
 }
 
 // Modify to handle MM-DD-YYYY format
@@ -495,14 +565,26 @@ export function getWorkScheduleForMonth(data: WorkScheduleItem[], year: number, 
   const monthStr = month < 10 ? `0${month}` : `${month}`;
   
   return data.filter(item => {
-    // Extract month from MM-DD-YYYY format
-    const parts = item.date.split('-');
-    if (parts.length === 3) {
-      const itemMonth = parts[0];
-      const itemYear = parseInt(parts[2]);
-      return itemMonth === monthStr && itemYear === year;
+    try {
+      // Normalize date and extract month and year
+      const normalizedDate = normalizeDate(item.date);
+      const parts = normalizedDate.split('-');
+      if (parts.length === 3) {
+        const itemMonth = parts[0]; // MM in MM-DD-YYYY format
+        let itemYear = parseInt(parts[2]);
+        
+        // Handle 2-digit years
+        if (parts[2].length === 2) {
+          itemYear = 2000 + itemYear; // Assume 20xx for 2-digit years
+        }
+        
+        return itemMonth === monthStr && itemYear === year;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error filtering by month:", error, item.date);
+      return false;
     }
-    return false;
   });
 }
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { 
   fetchWorkScheduleData, 
@@ -10,8 +11,8 @@ import {
   getUniqueNames,
   WorkScheduleItem,
   readExcelFile,
-  formatDateToISO,
-  formatDateToDisplay
+  normalizeDate,
+  formatDateToReadable
 } from "@/services/sheetService";
 
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parse, isValid } from "date-fns";
@@ -138,8 +139,8 @@ export default function WorkScheduleDashboard() {
           return {
             id: `${index + 1}`,
             name: row.Name || "",
-            // Use the exact column name from Excel: "Date", fallback to alternate names
-            date: row.Date || row['date'] || row.DATE || "",
+            // Use normalized date format
+            date: row.Date ? normalizeDate(String(row.Date)) : "",
             // Use the exact column name from Excel: "Shifts", fallback to alternatives
             shift: row.Shifts || row.SHIFT || row.Shift || row.shift || "",
             position: row.Position || row.POSITION || row.position || ""
@@ -187,16 +188,16 @@ export default function WorkScheduleDashboard() {
       filtered = filtered.filter(item => item.name === nameFilter);
     }
     
-    // Sort by date - convert MM-DD-YYYY to Date objects for comparison
+    // Sort by date - use normalizeDate for consistent comparison
     return filtered.sort((a, b) => {
       try {
-        // Make sure we're working with strings
-        const dateStringA = String(a.date);
-        const dateStringB = String(b.date);
+        // Normalize both dates to MM-DD-YYYY format
+        const dateStrA = normalizeDate(a.date);
+        const dateStrB = normalizeDate(b.date);
         
-        // Parse the date strings to Date objects
-        const dateA = parse(dateStringA, "MM-dd-yyyy", new Date());
-        const dateB = parse(dateStringB, "MM-dd-yyyy", new Date());
+        // Parse the normalized dates to Date objects
+        const dateA = parse(dateStrA, "MM-dd-yyyy", new Date());
+        const dateB = parse(dateStrB, "MM-dd-yyyy", new Date());
         
         // Check if parse was successful
         if (!isValid(dateA) || !isValid(dateB)) {
@@ -215,6 +216,7 @@ export default function WorkScheduleDashboard() {
   
   const todaySchedule = useMemo(() => {
     if (!selectedDate) return [];
+    // Format selected date to MM-DD-YYYY for comparison
     const formattedDate = format(selectedDate, 'MM-dd-yyyy');
     return getWorkScheduleForDate(filteredData, formattedDate);
   }, [filteredData, selectedDate]);
@@ -237,7 +239,7 @@ export default function WorkScheduleDashboard() {
     setNameFilter("all");
   };
 
-  // Function to download CSV
+  // Function to download CSV with consistent date format
   const handleExportCSV = () => {
     if (filteredData.length === 0) {
       toast.error("No data to export");
@@ -247,7 +249,7 @@ export default function WorkScheduleDashboard() {
     // CSV header
     let csv = "Name,Date,Shift,Position\n";
     
-    // Add data rows
+    // Add data rows with consistent date format
     filteredData.forEach(item => {
       csv += `"${item.name}","${item.date}","${item.shift}","${item.position}"\n`;
     });
@@ -265,10 +267,21 @@ export default function WorkScheduleDashboard() {
     toast.success("Schedule exported successfully");
   };
 
-  // Function to get schedule items for a specific day
+  // Function to get schedule items for a specific day using proper date comparison
   const getScheduleForDay = (day: Date) => {
     const dateStr = format(day, 'MM-dd-yyyy');
-    return scheduleData.filter(item => item.date === dateStr);
+    return scheduleData.filter(item => {
+      try {
+        // Normalize item date
+        const normalizedItemDate = normalizeDate(item.date);
+        
+        // Compare with formatted day
+        return normalizedItemDate === dateStr;
+      } catch (error) {
+        console.error("Error comparing dates in calendar:", error, item.date, dateStr);
+        return false;
+      }
+    });
   };
 
   // Function to render calendar day content
@@ -390,7 +403,7 @@ export default function WorkScheduleDashboard() {
                       {filteredData.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell>{formatDateForDisplay(item.date)}</TableCell>
+                          <TableCell>{formatDateToReadable(item.date)}</TableCell>
                           <TableCell>
                             <Badge className={`${getShiftColor(item.shift)}`}>
                               {item.shift}
@@ -479,7 +492,7 @@ export default function WorkScheduleDashboard() {
                           </div>
                           <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                             <span>{item.position}</span>
-                            <span>{formatDateForDisplay(item.date)}</span>
+                            <span>{formatDateToReadable(item.date)}</span>
                           </div>
                         </div>
                       ))}
