@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { 
   fetchWorkScheduleData, 
@@ -16,7 +15,7 @@ import {
 } from "@/services/sheetService";
 
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parse, isValid } from "date-fns";
-import { Calendar as CalendarIcon, User, Clock, Filter, BriefcaseIcon, Upload, FileUp } from "lucide-react";
+import { Calendar as CalendarIcon, User, Clock, Filter, BriefcaseIcon, Upload, FileUp, ArrowUpDown } from "lucide-react";
 import { 
   Table, 
   TableHeader, 
@@ -96,6 +95,8 @@ export default function WorkScheduleDashboard() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [viewMonth, setViewMonth] = useState<Date>(new Date());
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [sortField, setSortField] = useState<keyof WorkScheduleItem>("date");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   
   useEffect(() => {
     const loadData = async () => {
@@ -165,6 +166,17 @@ export default function WorkScheduleDashboard() {
     }
   };
 
+  const handleSort = (field: keyof WorkScheduleItem) => {
+    if (field === sortField) {
+      // Toggle sort direction if clicking the same field
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // Set new sort field and default to ascending
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
   const filteredData = useMemo(() => {
     let filtered = scheduleData;
     
@@ -188,31 +200,51 @@ export default function WorkScheduleDashboard() {
       filtered = filtered.filter(item => item.name === nameFilter);
     }
     
-    // Sort by date - use normalizeDate for consistent comparison
-    return filtered.sort((a, b) => {
-      try {
-        // Normalize both dates to MM-DD-YYYY format
-        const dateStrA = normalizeDate(a.date);
-        const dateStrB = normalizeDate(b.date);
-        
-        // Parse the normalized dates to Date objects
-        const dateA = parse(dateStrA, "MM-dd-yyyy", new Date());
-        const dateB = parse(dateStrB, "MM-dd-yyyy", new Date());
-        
-        // Check if parse was successful
-        if (!isValid(dateA) || !isValid(dateB)) {
-          console.error("Invalid date during sort:", a.date, b.date);
-          return 0;
+    // Apply date filter for both list and calendar views
+    if (selectedDate) {
+      const formattedDate = format(selectedDate, 'MM-dd-yyyy');
+      filtered = getWorkScheduleForDate(filtered, formattedDate);
+    }
+    
+    // Sort data based on current sort field and direction
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      
+      // Handle different field types
+      if (sortField === "date") {
+        // Convert dates to consistent format for comparison
+        try {
+          // Normalize both dates to MM-DD-YYYY format
+          const dateStrA = normalizeDate(a.date);
+          const dateStrB = normalizeDate(b.date);
+          
+          // Parse the normalized dates to Date objects
+          const dateA = parse(dateStrA, "MM-dd-yyyy", new Date());
+          const dateB = parse(dateStrB, "MM-dd-yyyy", new Date());
+          
+          // Check if parse was successful
+          if (!isValid(dateA) || !isValid(dateB)) {
+            console.error("Invalid date during sort:", a.date, b.date);
+            return 0;
+          }
+          
+          // Compare timestamps
+          comparison = dateA.getTime() - dateB.getTime();
+        } catch (error) {
+          console.error("Error sorting dates:", error, a.date, b.date);
+          comparison = 0;
         }
-        
-        // Compare timestamps
-        return dateA.getTime() - dateB.getTime();
-      } catch (error) {
-        console.error("Error sorting dates:", error, a.date, b.date);
-        return 0; // Return 0 for equal sorting if there's an error
+      } else {
+        // For string fields
+        const valueA = String(a[sortField] || "").toLowerCase();
+        const valueB = String(b[sortField] || "").toLowerCase();
+        comparison = valueA.localeCompare(valueB);
       }
+      
+      // Apply sort direction
+      return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [scheduleData, searchQuery, shiftFilter, positionFilter, nameFilter]);
+  }, [scheduleData, searchQuery, shiftFilter, positionFilter, nameFilter, selectedDate, sortField, sortDirection]);
   
   const todaySchedule = useMemo(() => {
     if (!selectedDate) return [];
@@ -237,6 +269,7 @@ export default function WorkScheduleDashboard() {
     setShiftFilter("all");
     setPositionFilter("all");
     setNameFilter("all");
+    setSelectedDate(null);
   };
 
   // Function to download CSV with consistent date format
@@ -251,7 +284,8 @@ export default function WorkScheduleDashboard() {
     
     // Add data rows with consistent date format
     filteredData.forEach(item => {
-      csv += `"${item.name}","${item.date}","${item.shift}","${item.position}"\n`;
+      const formattedDate = formatDateToReadable(item.date);
+      csv += `"${item.name}","${formattedDate}","${item.shift}","${item.position}"\n`;
     });
     
     // Create blob and download
@@ -393,10 +427,50 @@ export default function WorkScheduleDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Shift</TableHead>
-                        <TableHead>Position</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort("name")}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Name</span>
+                            {sortField === "name" && (
+                              <ArrowUpDown size={14} className={sortDirection === "desc" ? "rotate-180" : ""} />
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort("date")}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Date</span>
+                            {sortField === "date" && (
+                              <ArrowUpDown size={14} className={sortDirection === "desc" ? "rotate-180" : ""} />
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort("shift")}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Shift</span>
+                            {sortField === "shift" && (
+                              <ArrowUpDown size={14} className={sortDirection === "desc" ? "rotate-180" : ""} />
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort("position")}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Position</span>
+                            {sortField === "position" && (
+                              <ArrowUpDown size={14} className={sortDirection === "desc" ? "rotate-180" : ""} />
+                            )}
+                          </div>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

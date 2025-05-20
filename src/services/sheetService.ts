@@ -547,16 +547,30 @@ export async function fetchWorkScheduleData(): Promise<WorkScheduleItem[]> {
 export function getTasksForDate(data: ScheduleItem[], date: string): ScheduleItem[] {
   // Normalize input date to MM-DD-YYYY
   const formattedDate = normalizeDate(date);
+  console.log("Getting tasks for date:", formattedDate);
   
   return data.filter(item => normalizeDate(item.date) === formattedDate);
 }
 
-// Adjust the date matching for MM-DD-YYYY format
+// Adjust the date matching for MM-DD-YYYY format with improved logging
 export function getWorkScheduleForDate(data: WorkScheduleItem[], date: string): WorkScheduleItem[] {
   // Normalize input date to MM-DD-YYYY
   const formattedDate = normalizeDate(date);
+  console.log("Getting work schedule for date:", formattedDate);
   
-  return data.filter(item => normalizeDate(item.date) === formattedDate);
+  const result = data.filter(item => {
+    const normalizedItemDate = normalizeDate(item.date);
+    const match = normalizedItemDate === formattedDate;
+    
+    if (match) {
+      console.log(`Match found: ${item.name} on ${normalizedItemDate} matches ${formattedDate}`);
+    }
+    
+    return match;
+  });
+  
+  console.log(`Found ${result.length} items for date ${formattedDate}`);
+  return result;
 }
 
 // Modify to handle MM-DD-YYYY format
